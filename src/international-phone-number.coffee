@@ -1,6 +1,8 @@
 # Author Marek Pietrucha
 # https://github.com/mareczek/international-phone-number
 
+$.fn.intlTelInput.loadUtils('https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/8.4.9/js/utils.js')
+
 "use strict"
 angular.module("internationalPhoneNumber", [])
 
@@ -15,9 +17,7 @@ angular.module("internationalPhoneNumber", [])
     nationalMode:           true
     numberType:             "MOBILE"
     onlyCountries:          undefined
-    preferredCountries:     ['us', 'gb']
-    skipUtilScriptDownload: false
-    utilsScript:            ""
+    preferredCountries:     ['gb', 'us']
   }
 
 .directive 'internationalPhoneNumber', ['$timeout', 'ipnConfig', ($timeout, ipnConfig) ->
@@ -74,9 +74,6 @@ angular.module("internationalPhoneNumber", [])
           ctrl.$modelValue = newValue
 
         element.intlTelInput(options)
-
-        unless options.skipUtilScriptDownload || attrs.skipUtilScriptDownload != undefined || options.utilsScript
-          element.intlTelInput('loadUtils', '/bower_components/intl-tel-input/lib/libphonenumber/build/utils.js')
 
         watchOnce()
 
