@@ -1,10 +1,13 @@
 # Author Marek Pietrucha
 # https://github.com/mareczek/international-phone-number
 
-$.fn.intlTelInput.loadUtils('https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/8.4.9/js/utils.js')
-
 "use strict"
-angular.module("internationalPhoneNumber", [])
+angular.module("internationalPhoneNumber", ['angularLoad'])
+.run(['angularLoad', (angularLoad) ->
+  angularLoad.loadScript('https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/8.5.0/js/intlTelInput.min.js').then ->
+    angularLoad.loadScript('https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/8.5.0/js/utils.js')
+  angularLoad.loadCSS('https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/8.5.0/css/intlTelInput.css')
+])
 
 .constant 'ipnConfig', {
     allowExtensions:        false
@@ -20,6 +23,14 @@ angular.module("internationalPhoneNumber", [])
     preferredCountries:     ['gb', 'us']
   }
 
+.filter 'E164ToInternational', ->
+  (e164Number) ->
+    if window.intlTelInputUtils
+      intlTelInputUtils.formatNumber(e164Number, null, 1)
+    else
+      e164Number
+
+    
 .directive 'internationalPhoneNumber', ['$timeout', 'ipnConfig', ($timeout, ipnConfig) ->
 
   restrict:   'A'
@@ -89,6 +100,7 @@ angular.module("internationalPhoneNumber", [])
         return value
 
       element.intlTelInput 'setNumber', value
+      ctrl.$setValidity element.intlTelInput("isValidNumber")
       element.val()
 
     ctrl.$parsers.push (value) ->
@@ -97,18 +109,10 @@ angular.module("internationalPhoneNumber", [])
 
       value.replace(/[^\d]/g, '')
 
-    ctrl.$validators.internationalPhoneNumber = (value) ->
-      selectedCountry = element.intlTelInput('getSelectedCountryData')
-
-      if !value || (selectedCountry && selectedCountry.dialCode == value)
-        return true
-
-      element.intlTelInput("isValidNumber")
-
     element.on 'blur keyup change', (event) ->
       scope.$apply read
 
     element.on '$destroy', () ->
-      element.intlTelInput('destroy');
+      element.intlTelInput('destroy')
       element.off 'blur keyup change'
 ]

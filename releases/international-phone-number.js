@@ -1,6 +1,13 @@
 (function() {
   "use strict";
-  angular.module("internationalPhoneNumber", []).constant('ipnConfig', {
+  angular.module("internationalPhoneNumber", ['angularLoad']).run([
+    'angularLoad', function(angularLoad) {
+      angularLoad.loadScript('https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/8.5.0/js/intlTelInput.min.js').then(function() {
+        return angularLoad.loadScript('https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/8.5.0/js/utils.js');
+      });
+      return angularLoad.loadCSS('https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/8.5.0/css/intlTelInput.css');
+    }
+  ]).constant('ipnConfig', {
     allowExtensions: false,
     autoFormat: true,
     autoHideDialCode: true,
@@ -11,9 +18,15 @@
     nationalMode: true,
     numberType: "MOBILE",
     onlyCountries: void 0,
-    preferredCountries: ['us', 'gb'],
-    skipUtilScriptDownload: false,
-    utilsScript: ""
+    preferredCountries: ['gb', 'us']
+  }).filter('E164ToInternational', function() {
+    return function(e164Number) {
+      if (window.intlTelInputUtils) {
+        return intlTelInputUtils.formatNumber(e164Number, null, 1);
+      } else {
+        return e164Number;
+      }
+    };
   }).directive('internationalPhoneNumber', [
     '$timeout', 'ipnConfig', function($timeout, ipnConfig) {
       return {
@@ -69,9 +82,6 @@
                 ctrl.$modelValue = newValue;
               }
               element.intlTelInput(options);
-              if (!(options.skipUtilScriptDownload || attrs.skipUtilScriptDownload !== void 0 || options.utilsScript)) {
-                element.intlTelInput('loadUtils', '/bower_components/intl-tel-input/lib/libphonenumber/build/utils.js');
-              }
               return watchOnce();
             });
           });
@@ -85,6 +95,7 @@
               return value;
             }
             element.intlTelInput('setNumber', value);
+            ctrl.$setValidity(element.intlTelInput("isValidNumber"));
             return element.val();
           });
           ctrl.$parsers.push(function(value) {
@@ -93,14 +104,6 @@
             }
             return value.replace(/[^\d]/g, '');
           });
-          ctrl.$validators.internationalPhoneNumber = function(value) {
-            var selectedCountry;
-            selectedCountry = element.intlTelInput('getSelectedCountryData');
-            if (!value || (selectedCountry && selectedCountry.dialCode === value)) {
-              return true;
-            }
-            return element.intlTelInput("isValidNumber");
-          };
           element.on('blur keyup change', function(event) {
             return scope.$apply(read);
           });
